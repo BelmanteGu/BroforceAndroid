@@ -79,6 +79,12 @@ namespace BroforceAndroid
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.allowedAutorotateToLandscapeLeft = true;
             PlayerSettings.allowedAutorotateToLandscapeRight = true;
+            // Unity 2017 caps the aspect ratio at 2.1 (letterboxing a 19.5:9 S23). The
+            // game's cameras adapt to any width, so allow up to 21:9 and beyond.
+            var player = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
+            player.FindProperty("androidSupportedAspectRatio").intValue = 2;   // Custom
+            player.FindProperty("androidMaxAspectRatio").floatValue = 2.4f;
+            player.ApplyModifiedPropertiesWithoutUndo();
             PlayerSettings.Android.forceSDCardPermission = false;
             PlayerSettings.Android.forceInternetPermission = false;
             PlayerSettings.Android.androidIsGame = true;

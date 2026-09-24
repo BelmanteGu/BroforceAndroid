@@ -34,7 +34,7 @@ adb shell getprop ro.product.cpu.abilist
 
 **Arcade mode and the campaign are playable** on a Galaxy S23 (Android 16): smooth, with music, effects and voices. Tested with a keyboard so far; gamepad testing is next.
 
-Since v0.1.0, on `main`: the background clouds and the 3D world map globe render correctly. Next: gamepad testing on device. See the [v0.2.0 milestone](../../milestones).
+Since v0.1.0, on `main`: the background clouds and the 3D world map globe render correctly, and the game fills wide screens edge to edge, including the camera cutout. Next: gamepad testing on device. See the [v0.2.0 milestone](../../milestones).
 
 How it got here, step by step and with screenshots: [docs/progress.md](docs/progress.md).
 
@@ -52,6 +52,12 @@ Technical notes are in [docs/](docs/).
 ## Getting started (development)
 
 You need Windows, Broforce installed via Steam and [7-Zip](https://www.7-zip.org).
+
+```powershell
+./scripts/build-all.ps1   # everything below in one go (-Install to put it on the phone)
+```
+
+Or step by step:
 
 ```powershell
 ./scripts/setup-env.ps1   # Unity 2017.4.7f1 + Android module, JDK 8, legacy Android SDK

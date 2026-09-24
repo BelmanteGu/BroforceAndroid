@@ -77,3 +77,15 @@ Two problems stacked:
    The baked lightmap came out of AssetRipper as a native PC texture (DXT5 holding RGBM), and Android decoded it with the mobile formula. The build now decodes it to an HDR EXR under the same GUID and imports it as a Lightmap, so Unity re-encodes it for Android:
 
    ![World map](images/13-world-map.jpg)
+
+### 9. Full screen on wide phones (#21)
+
+The S23 showed a black strip on the camera side in landscape. Two limits stacked: Unity 2017 caps the aspect ratio at 2.1 (the S23 is about 2.17), and Android keeps the display cutout's edge empty unless the app opts in, and Unity 2017 predates that setting. The max aspect ratio is now 2.4, and at startup the game sets `layoutInDisplayCutoutMode = SHORT_EDGES` on its window. The game's cameras already adapt to any width.
+
+Emulator with a simulated cutout, before (content stops about 145 px from the left edge):
+
+![Before](images/14-cutout-before.jpg)
+
+After, edge to edge:
+
+![After](images/15-fullscreen-cutout.jpg)
