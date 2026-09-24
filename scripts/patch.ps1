@@ -63,6 +63,27 @@ foreach ($asm in $prune) {
 }
 Write-Host "[prune] moved $moved files to $removed ($($prune.Count) assemblies)"
 
+# Rewritten shaders (shaders/*.shader, see docs/shaders.md). Each replaces every
+# placeholder with the same Shader "name" (most shaders are exported twice: once from
+# the main data files, once from the bundles), keeping the placeholders' .meta so
+# materials still point at them by GUID.
+$exported = @{}
+foreach ($f in Get-ChildItem (Join-Path $project 'Assets') -Recurse -Filter *.shader) {
+  $m = Select-String -LiteralPath $f.FullName -Pattern '^\s*Shader\s+"([^"]+)"' | Select-Object -First 1
+  if ($m) { $exported[$m.Matches[0].Groups[1].Value] += @($f.FullName) }
+}
+$replaced = 0
+foreach ($f in Get-ChildItem (Join-Path $Root 'shaders') -Filter *.shader) {
+  $m = Select-String -LiteralPath $f.FullName -Pattern '^\s*Shader\s+"([^"]+)"' | Select-Object -First 1
+  $name = $m.Matches[0].Groups[1].Value
+  if (-not $exported.ContainsKey($name)) { throw "No exported shader named '$name' for $($f.Name)" }
+  foreach ($target in $exported[$name]) {
+    Copy-Item -LiteralPath $f.FullName -Destination $target -Force
+    $replaced++
+  }
+}
+Write-Host "[shaders] replaced $replaced placeholder file(s)"
+
 Write-Host '[build] runtime'
 dotnet build (Join-Path $Root 'runtime') -c Release -nologo -v q "-p:GameManagedDir=$GameManagedDir"
 if ($LASTEXITCODE -ne 0) { throw 'runtime build failed' }

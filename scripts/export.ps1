@@ -24,6 +24,10 @@ param(
   [ValidateSet('DllExportWithoutRenaming', 'DllExportWithRenaming', 'Decompiled', 'Hybrid')]
   [string]$ScriptMode = 'DllExportWithoutRenaming',
   [string]$Name,
+  # Dummy: placeholder shaders that compile. Yaml: serialized shader (render states,
+  # properties, constant names) for reference when rewriting shaders.
+  [ValidateSet('Dummy', 'Yaml')]
+  [string]$ShaderMode = 'Dummy',
   [string]$AssetRipperVersion = '2.0.0',
   [int]$Port = 5123,
   [switch]$Force
@@ -129,7 +133,7 @@ try {
     ImageExportFormat              = 'Png'
     LightmapTextureExportFormat    = 'Yaml'
     SpriteExportMode               = 'Yaml'
-    ShaderExportMode               = 'Dummy'   # decompilation is a paid feature; PC shaders are DX bytecode anyway
+    ShaderExportMode               = $ShaderMode   # decompilation is a paid feature; PC shaders are DX bytecode anyway
     TextExportMode                 = 'Parse'
     ScriptLanguageVersion          = 'AutoSafe'
     ScriptExportMode               = $ScriptMode
