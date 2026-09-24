@@ -34,5 +34,14 @@ namespace BroforceAndroid
                 ? RewiredPlatformAndroid
                 : RewiredPlatformWindows;
         }
+
+        /// <summary>
+        /// Guards PostEffectsBase.CheckSupport: the Standard Assets image effects stay on
+        /// in the Editor but disable themselves on Android.
+        /// </summary>
+        public static bool ImageEffectsAllowed()
+        {
+            return Application.platform != RuntimePlatform.Android;
+        }
     }
 }

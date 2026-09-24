@@ -74,6 +74,27 @@ static class Patches
         new("quickcapture", "Assembly-CSharp", "QuickCapture", "LateUpdate",
             "QuickCapture.LateUpdate() does nothing (NatCorder dev capture tool, runs every frame)",
             ctx => ReplaceBody(ctx.Method, il => il.Emit(OpCodes.Ret))),
+
+        // --- Graphics (#10, #19) ------------------------------------------------
+        // Standard Assets image effects (bloom, vignetting, SSAO, DOF, ...) are too heavy
+        // for mobile and their shaders are placeholders. Every one of them calls
+        // CheckSupport(needDepth) and disables itself when it returns false.
+        new("image-effects", "Assembly-UnityScript-firstpass", "PostEffectsBase", "CheckSupport",
+            "PostEffectsBase.CheckSupport(bool) reports unsupported on Android (effects disable themselves)",
+            ctx =>
+            {
+                var notSupported = ctx.Method.DeclaringType.Methods.SingleOrDefault(m => m.Name == "NotSupported" && !m.HasParameters)
+                    ?? throw new PatchException("PostEffectsBase.NotSupported() not found");
+                var il = ctx.Method.Body.GetILProcessor();
+                var original = ctx.Method.Body.Instructions[0];
+                // if (!Hooks.ImageEffectsAllowed()) { NotSupported(); return false; }
+                il.InsertBefore(original, il.Create(OpCodes.Call, ctx.Hook("ImageEffectsAllowed")));
+                il.InsertBefore(original, il.Create(OpCodes.Brtrue, original));
+                il.InsertBefore(original, il.Create(OpCodes.Ldarg_0));
+                il.InsertBefore(original, il.Create(OpCodes.Callvirt, notSupported));
+                il.InsertBefore(original, il.Create(OpCodes.Ldc_I4_0));
+                il.InsertBefore(original, il.Create(OpCodes.Ret));
+            }) { ParamCount = 1 },
     };
 
     static void ReturnConstant(MethodDefinition method, bool value)
@@ -97,7 +118,11 @@ static class Patches
     }
 }
 
-record Patch(string Id, string Assembly, string Type, string Method, string Description, Action<PatchContext> Apply);
+record Patch(string Id, string Assembly, string Type, string Method, string Description, Action<PatchContext> Apply)
+{
+    /// <summary>Picks one overload by parameter count when the method name is overloaded.</summary>
+    public int? ParamCount { get; init; }
+}
 
 class PatchContext(MethodDefinition method, ModuleDefinition module, TypeDefinition hooks)
 {

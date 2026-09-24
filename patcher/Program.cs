@@ -68,7 +68,8 @@ foreach (var group in Patches.All.GroupBy(p => p.Assembly))
         try
         {
             var type = module.GetType(patch.Type) ?? throw new PatchException($"type {patch.Type} not found");
-            var methods = type.Methods.Where(m => m.Name == patch.Method && m.HasBody).ToList();
+            var methods = type.Methods.Where(m => m.Name == patch.Method && m.HasBody
+                && (patch.ParamCount is null || m.Parameters.Count == patch.ParamCount)).ToList();
             if (methods.Count != 1)
                 throw new PatchException($"expected 1 method {patch.Type}.{patch.Method}, found {methods.Count}");
 
