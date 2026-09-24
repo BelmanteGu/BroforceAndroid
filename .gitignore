@@ -7,6 +7,9 @@ export/
 work/
 project/
 
+# Official game art for personal builds (icon, launcher background). Never commit.
+art/
+
 # Game files, in case someone copies them here by mistake
 Broforce_beta_Data/
 *.assets

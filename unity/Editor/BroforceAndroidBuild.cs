@@ -175,6 +175,7 @@ namespace BroforceAndroid
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
                 Fail("Active build target is not Android. Run ConfigureAndroid first.");
 
+            ApplyBranding();
             BuildBundles();
 
             string apk = Arg("-apkPath", Path.Combine(RepoDir, "build/Broforce.apk"));
@@ -186,6 +187,49 @@ namespace BroforceAndroid
             var report = BuildPipeline.BuildPlayer(scenes, apk, BuildTarget.Android, BuildOptions.None);
             if (!string.IsNullOrEmpty(report)) Fail("BuildPlayer failed: " + report);
             Debug.Log(string.Format("[BroforceAndroid] APK: {0} ({1:N0} MB)", apk, new FileInfo(apk).Length / 1048576.0));
+        }
+
+        // Version from <repo>/VERSION; icon and splash background from the art that
+        // build-apk.ps1 copies into Assets/BroforceAndroid (personal builds only).
+        static void ApplyBranding()
+        {
+            string versionFile = Path.Combine(RepoDir, "VERSION");
+            if (File.Exists(versionFile))
+            {
+                string version = File.ReadAllText(versionFile).Trim();
+                PlayerSettings.bundleVersion = version;
+                // 0.1.0 -> 100, 1.2.3 -> 10203
+                int[] parts = version.Split('.').Select(p => { int n; return int.TryParse(p, out n) ? n : 0; }).ToArray();
+                // System.Math: the game's assembly has its own global "Math" class.
+                PlayerSettings.Android.bundleVersionCode = System.Math.Max(1,
+                    (parts.Length > 0 ? parts[0] : 0) * 10000 + (parts.Length > 1 ? parts[1] : 0) * 100 + (parts.Length > 2 ? parts[2] : 0));
+            }
+
+            const string iconPath = "Assets/BroforceAndroid/Icon.png";
+            if (File.Exists(Path.Combine(ProjectDir, iconPath)))
+            {
+                AssetDatabase.ImportAsset(iconPath);
+                Texture2D icon = AssetDatabase.LoadAssetAtPath<Texture2D>(iconPath);
+                int count = PlayerSettings.GetIconSizesForTargetGroup(BuildTargetGroup.Android).Length;
+                PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Android, Enumerable.Repeat(icon, count).ToArray());
+                Debug.Log("[BroforceAndroid] App icon set from " + iconPath);
+            }
+
+            const string splashPath = "Assets/BroforceAndroid/Splash.png";
+            if (File.Exists(Path.Combine(ProjectDir, splashPath)))
+            {
+                AssetDatabase.ImportAsset(splashPath);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(splashPath);
+                if (importer.textureType != TextureImporterType.Sprite)
+                {
+                    importer.textureType = TextureImporterType.Sprite;
+                    importer.SaveAndReimport();
+                }
+                PlayerSettings.SplashScreen.background = AssetDatabase.LoadAssetAtPath<Sprite>(splashPath);
+                PlayerSettings.SplashScreen.backgroundColor = new Color32(0x16, 0x0B, 0x08, 0xFF);
+                Debug.Log("[BroforceAndroid] Splash background set from " + splashPath);
+            }
+            AssetDatabase.SaveAssets();
         }
 
         // ------------------------------------------------------------------ diagnostics
@@ -229,6 +273,24 @@ namespace BroforceAndroid
                     Path.GetFileName(dll), scripts.Length, expected, missing.Count, asm == null ? " (assembly not loaded!)" : ""));
                 foreach (string m in missing.Take(40))
                     Debug.Log("[BroforceAndroid][scripts]   no MonoScript: " + m);
+            }
+        }
+
+        // Imported format of textures on the active platform: -texture "Assets/..." (repeatable).
+        public static void ReportTextures()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] != "-texture") continue;
+                string path = args[i + 1];
+                var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (importer == null || tex == null) { Debug.Log("[BroforceAndroid][tex] not found: " + path); continue; }
+                TextureImporterPlatformSettings android = importer.GetPlatformTextureSettings("Android");
+                Debug.Log(string.Format("[BroforceAndroid][tex] {0}: {1}x{2} format={3} alphaSource={4} alphaIsTransparency={5} type={6} npot={7} androidOverride={8}/{9} doesSourceHaveAlpha={10}",
+                    path, tex.width, tex.height, tex.format, importer.alphaSource, importer.alphaIsTransparency,
+                    importer.textureType, importer.npotScale, android.overridden, android.format, importer.DoesSourceTextureHaveAlpha()));
             }
         }
 

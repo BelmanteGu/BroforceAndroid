@@ -25,16 +25,25 @@ adb shell getprop ro.product.cpu.abilist
 2. **Patch**: scripts in this repo remove what doesn't exist on Android (Steamworks, console SDKs, Windows Forms) and fix saves, shaders and gamepad input.
 3. **Build**: Unity 2017.4.7f1 produces the APK.
 
-## Status
+## Status: playable (v0.1.0)
 
-Work in progress. The roadmap lives in the [issues](../../issues) and [milestones](../../milestones), split into phases:
+<p>
+  <img src="docs/images/04-main-menu.jpg" width="49%" alt="Main menu">
+  <img src="docs/images/08-gameplay-jungle-s23.jpg" width="49%" alt="Gameplay on a Galaxy S23">
+</p>
+
+**Arcade mode and the campaign are playable** on a Galaxy S23 (Android 16): smooth, with music, effects and voices. Tested with a keyboard so far; gamepad testing is next.
+
+Known issues: background clouds render as flat rectangles, and the 3D world map globe is black. See the [v0.2.0 milestone](../../milestones).
+
+How it got here, step by step and with screenshots: [docs/progress.md](docs/progress.md).
 
 | Phase | Goal | Gate |
 |---|---|---|
 | 0 | Reconnaissance | Unity version, plugins and device ABI known ✅ |
-| 1 | Export with AssetRipper | Project opens in the Editor with no compile errors |
-| 2 | Run in the Editor | A full mission is playable on PC |
-| 3 | First Android build | The game boots on the phone and reaches the main menu |
+| 1 | Export with AssetRipper | Project opens in the Editor with no compile errors ✅ |
+| 2 | Run in the Editor | A full mission is playable on PC (skipped: tested on device directly) |
+| 3 | First Android build | The game boots on the phone and reaches the main menu ✅ |
 | 4 | Gamepad | A full mission on the phone with a controller |
 | 5 | Performance and polish | Every world playable at a stable frame rate |
 
@@ -52,6 +61,8 @@ You need Windows, Broforce installed via Steam and [7-Zip](https://www.7-zip.org
 ```
 
 The full pipeline is explained in [docs/building.md](docs/building.md).
+
+Optional: put your own `art/icon.png` (app icon) in the repo folder before `build-apk.ps1`. The `art/` folder is git-ignored; official art is never committed.
 
 Unity 2017.4 also needs a free Personal license, activated once from the 2017.4 editor itself (not from the current Unity Hub). Details in [docs/setup.md](docs/setup.md).
 

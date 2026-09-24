@@ -155,7 +155,11 @@ namespace BroforceAndroid
             {
                 Renderer r = list[i];
                 Material m = r.sharedMaterial;
+                Texture mt = m != null && m.HasProperty("_MainTex") ? m.mainTexture : null;
+                Texture2D mt2 = mt as Texture2D;
                 Debug.Log("[BroforceAndroid]   rend '" + r.name + "' " + r.GetType().Name
+                    + " mat=" + (m != null ? m.name : "none")
+                    + " tex=" + (mt != null ? mt.name + (mt2 != null ? "/" + mt2.format : "") : "none")
                     + " shader=" + (m != null && m.shader != null ? m.shader.name + (m.shader.isSupported ? "" : " (UNSUPPORTED)") : "none")
                     + " queue=" + (m != null ? m.renderQueue : -1) + " center=" + r.bounds.center + " size=" + r.bounds.size
                     + " layer=" + LayerMask.LayerToName(r.gameObject.layer) + " sort=" + r.sortingOrder);

@@ -38,6 +38,21 @@ $editorDir = Join-Path $project 'Assets\Editor\BroforceAndroid'
 New-Item -ItemType Directory -Force $editorDir | Out-Null
 Copy-Item (Join-Path $Root 'unity\Editor\*.cs') $editorDir -Force
 
+# 2. Official art for personal builds, from the git-ignored art/ folder:
+#    art/icon.png   -> app icon
+#    art/splash.png -> background of Unity's splash screen
+#    Without art/ the build uses Unity's defaults.
+$artDir = Join-Path $Root 'art'
+$brandDir = Join-Path $project 'Assets\BroforceAndroid'
+New-Item -ItemType Directory -Force $brandDir | Out-Null
+foreach ($pair in @(@('icon.png', 'Icon.png'), @('splash.png', 'Splash.png'))) {
+  $from = Join-Path $artDir $pair[0]
+  if (Test-Path $from) {
+    Copy-Item $from (Join-Path $brandDir $pair[1]) -Force
+    Write-Host "[art] $($pair[0]) -> Assets/BroforceAndroid/$($pair[1])"
+  }
+}
+
 function Invoke-Unity($step, $method) {
   $log = Join-Path $Root "export\$Name\$step.log"
   Write-Host "[unity] $method (log: $log)"
