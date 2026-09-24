@@ -63,6 +63,29 @@ foreach ($asm in $prune) {
 }
 Write-Host "[prune] moved $moved files to $removed ($($prune.Count) assemblies)"
 
+# WAV headers: AssetRipper writes about half of the clips with the RIFF and data chunk
+# sizes left at 0 (a streaming-style header). The samples are fine, but Unity's FSBTool
+# refuses them ("Failed decoding audio clip"), leaving voices and effects silent.
+# Fill in both sizes for canonical 44-byte PCM headers.
+$fixedWavs = 0
+foreach ($wav in Get-ChildItem (Join-Path $project 'Assets') -Recurse -Filter *.wav) {
+  $fs = [IO.File]::Open($wav.FullName, 'Open', 'ReadWrite')
+  try {
+    $h = New-Object byte[] 44
+    if ($fs.Read($h, 0, 44) -lt 44) { continue }
+    $isCanonical = [Text.Encoding]::ASCII.GetString($h, 0, 4) -eq 'RIFF' -and
+      [Text.Encoding]::ASCII.GetString($h, 8, 4) -eq 'WAVE' -and
+      [BitConverter]::ToUInt32($h, 16) -eq 16 -and
+      [Text.Encoding]::ASCII.GetString($h, 36, 4) -eq 'data'
+    if (-not $isCanonical) { continue }
+    if ([BitConverter]::ToUInt32($h, 4) -ne 0 -and [BitConverter]::ToUInt32($h, 40) -ne 0) { continue }
+    $fs.Position = 4;  $fs.Write([BitConverter]::GetBytes([uint32]($fs.Length - 8)), 0, 4)
+    $fs.Position = 40; $fs.Write([BitConverter]::GetBytes([uint32]($fs.Length - 44)), 0, 4)
+    $fixedWavs++
+  } finally { $fs.Dispose() }
+}
+Write-Host "[audio] fixed $fixedWavs WAV header(s)"
+
 # Rewritten shaders (shaders/*.shader, see docs/shaders.md). Each replaces every
 # placeholder with the same Shader "name" (most shaders are exported twice: once from
 # the main data files, once from the bundles), keeping the placeholders' .meta so
