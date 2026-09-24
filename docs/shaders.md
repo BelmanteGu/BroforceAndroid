@@ -4,7 +4,7 @@ The free AssetRipper exports shaders as **placeholders**: the `Properties` block
 
 Built-in Unity shaders (materials pointing to `guid: 0000000000000000f000000000000000`) are **not** a problem: Unity compiles them for Android itself.
 
-Counted from `m_Shader` in every `.mat` of the export (Steam build 12964083). 97 shader files are exported; 64 custom ones are used by at least one material.
+Counted from `m_Shader` in every `.mat` of the export (Steam build 12964083). 97 shader files are exported; 55 distinct custom shaders are used by at least one material.
 
 ## Priority 1: covers ~75% of materials
 
@@ -42,9 +42,32 @@ About 430 materials use built-in shaders (`fileID` 200, 202, 203, 207, 7, 30, 46
 - Renderers with no material file (default sprite material)
 - Image effects on cameras (`Image Effects/*` above are the ones with materials)
 
-## Approach
+## Method
 
-1. Rewrite each shader as a normal CG shader keeping the **same name and property names**, so existing materials pick it up without changes.
-2. Start from the placeholder's `Properties` block (it's accurate) and the material values.
-3. When the behavior isn't obvious from names and properties, disassemble the original DXBC from the game's `sharedassets*.assets` to recover the math.
-4. Replace the placeholder file in the export via a script (like the patcher), so rewritten shaders live in this repo under `shaders/`.
+Rewrites live in [`shaders/`](../shaders) and keep the original's **exact shader name and property names**. `scripts/patch.ps1` copies each one over every exported placeholder with the same name (most shaders are exported twice, once from the main data and once from the bundles), keeping the placeholders' `.meta` so materials still reference them by GUID.
+
+The math comes from the original compiled shaders, not guesswork:
+
+```powershell
+./scripts/export.ps1 -ShaderMode Yaml -Name unity-shaderyaml
+python scripts/shader-dump.py export/unity-shaderyaml/ExportedProject/Assets export/shader-reference
+```
+
+`shader-dump.py` writes one Markdown file per shader (to `export/`, never committed) with:
+
+- properties, queue, and per-pass render state (blend, ZTest/ZWrite, cull, color mask), decoded from the serialized shader
+- the D3D11 disassembly of every program, produced by Windows' own `d3dcompiler_47.dll` after LZ4-decompressing Unity's program blob
+- which register holds which property (`cb0[3].y = _WorldToPixel`, `t1 = _Ramp`), recovered from Unity's parameter tables because shipped shaders have no reflection data
+
+Rules for rewrites:
+
+- Reproduce constants, thresholds and factors exactly (e.g. the main sprite shader discards at alpha <= 0.2; the tinted one doubles its output).
+- Match render state and queue per pass.
+- Lighting-based surface shaders are rendered unlit (albedo/emission path): the 2D scenes don't light these objects dynamically. Real-time shadow maps are dropped.
+- Keep to GLES2/GLES3-safe CG (`sampler2D`/`tex2D`, constant loop bounds, ≤ 8 interpolators).
+
+## Status
+
+All 55 custom shaders used by materials have been rewritten; none are verified in Unity yet (tracked in #10 until they compile and look right on device).
+
+The Standard Assets image effects (bloom, vignetting, SSAO, DOF, ...) are disabled on Android by the `image-effects` patch instead of being rewritten. The game's own effects (`Image Effects/Free Lives Lighting Overlay` and `Refraction`, `Custom/HeatHaze`) are rewritten. Amplify Color's hidden shaders are still placeholders, which effectively pass the image through without color grading.
