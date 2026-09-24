@@ -26,6 +26,13 @@ $project = Join-Path $Root "export\$Name\ExportedProject"
 if (-not (Test-Path $project)) { throw "$project not found. Run ./scripts/export.ps1 and ./scripts/patch.ps1 first." }
 if (-not (Test-Path $Unity)) { throw "Unity not found at $Unity. Run ./scripts/setup-env.ps1." }
 
+# The SDK tools Unity calls (avdmanager, sdkmanager) run on JAVA_HOME / PATH, not on
+# Unity's JDK preference, and they break on JDK 9+ (javax.xml.bind is gone).
+$jdk = Get-ChildItem 'C:\Java' -Directory -Filter 'jdk8*' -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $jdk) { throw 'JDK 8 not found under C:\Java. Run ./scripts/setup-env.ps1.' }
+$env:JAVA_HOME = $jdk.FullName
+$env:Path = "$($jdk.FullName)\bin;$env:Path"
+
 # 1. Editor automation
 $editorDir = Join-Path $project 'Assets\Editor\BroforceAndroid'
 New-Item -ItemType Directory -Force $editorDir | Out-Null
