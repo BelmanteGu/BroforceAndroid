@@ -64,9 +64,11 @@ namespace BroforceAndroid
             PlayerSettings.Android.targetDevice = AndroidTargetDevice.ARMv7;
             PlayerSettings.strippingLevel = StrippingLevel.Disabled;
 
+            // GLES3 only: every device that can run this has it, and the shaders we leave
+            // as AssetRipper placeholders (e.g. Amplify Color's) don't compile for GLES2.
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
             PlayerSettings.SetGraphicsAPIs(BuildTarget.Android,
-                new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3, UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2 });
+                new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 });
 
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel19;
             // Android 14+ refuses to install apps targeting < 23. 28 is what sdk-legacy ships.

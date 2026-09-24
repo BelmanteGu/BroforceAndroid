@@ -58,7 +58,7 @@ public static class ShaderCheck
         PlayerSettings.Android.targetDevice = AndroidTargetDevice.ARMv7;
         PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
         PlayerSettings.SetGraphicsAPIs(BuildTarget.Android,
-            new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3, UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2 });
+            new[] { UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3 });
         PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel19;
         PlayerSettings.Android.targetSdkVersion = (AndroidSdkVersions)28;
         EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Internal;
