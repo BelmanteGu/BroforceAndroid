@@ -50,6 +50,15 @@ namespace BroforceAndroid
         /// </summary>
         public static void OnStartup()
         {
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                // Unity caps Android at 30 FPS unless targetFrameRate is set, and the game
+                // never sets it (on PC it relies on vsync).
+                Application.targetFrameRate = 60;
+                // Gamepad-only play: nothing touches the screen, so don't let it dim.
+                Screen.sleepTimeout = SleepTimeout.NeverSleep;
+            }
+
             Debug.Log("[BroforceAndroid] " + Application.platform + " | " + SystemInfo.deviceModel
                 + " | " + SystemInfo.operatingSystem + " | " + SystemInfo.graphicsDeviceType
                 + " " + SystemInfo.graphicsDeviceVersion + " | " + Screen.width + "x" + Screen.height
