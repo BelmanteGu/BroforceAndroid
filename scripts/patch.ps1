@@ -30,9 +30,10 @@ if (-not (Test-Path "$GameManagedDir\UnityEngine.CoreModule.dll")) {
 }
 
 # Managed assemblies that nothing on the runtime path references: not reachable from
-# Assembly-CSharp/firstpass/UnityScript/Rewired/PowerInspector, and no scene, prefab or
-# asset uses their scripts (checked by GUID). Windows UI, console SDKs and framework
-# copies that Unity provides itself. See #7 and #8.
+# Assembly-CSharp/firstpass/UnityScript/Rewired, and no scene, prefab or asset uses
+# their scripts (checked by GUID). Windows UI, console SDKs, the PowerInspector runtime
+# inspector (debug tool, the only user of Odin/FastReflection) and framework copies
+# that Unity provides itself. See #7, #8 and #11.
 # XboxOneCommonImport, AlienFXManagedWrapper3.5 and Gif.Components stay: Assembly-CSharp
 # references them; their call sites are neutralized by the patcher instead.
 $prune = @(
@@ -41,6 +42,8 @@ $prune = @(
   'System.Runtime.CompilerServices.Unsafe', 'System.Runtime.InteropServices',
   'System.Security', 'System.Windows.Forms',
   'Unity.ZombieObjectDetector.Runtime', 'UnityEtx',
+  # PowerInspector (Sisus.Newtonsoft.Json stays: Assembly-CSharp uses it)
+  'PowerInspector.Runtime', 'Sisus.Attributes', 'Sisus.FastReflection', 'Sisus.OdinSerializer',
   # Xbox One
   'ConsoleUtilsImport', 'DataPlatformImport', 'FriendsImport', 'GameDVRImport', 'GamepadImport',
   'MarketplaceImport', 'MultiplayerImport', 'SmartGlassImport', 'StorageImport',
