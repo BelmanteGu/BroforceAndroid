@@ -29,6 +29,37 @@ if (-not (Test-Path "$GameManagedDir\UnityEngine.CoreModule.dll")) {
   throw "Game Managed folder not found. Pass -GameManagedDir '<Broforce>\Broforce_beta_Data\Managed'."
 }
 
+# Managed assemblies that nothing on the runtime path references: not reachable from
+# Assembly-CSharp/firstpass/UnityScript/Rewired/PowerInspector, and no scene, prefab or
+# asset uses their scripts (checked by GUID). Windows UI, console SDKs and framework
+# copies that Unity provides itself. See #7 and #8.
+# XboxOneCommonImport, AlienFXManagedWrapper3.5 and Gif.Components stay: Assembly-CSharp
+# references them; their call sites are neutralized by the patcher instead.
+$prune = @(
+  'Accessibility', 'CommonForms', 'GifComponents', 'Mono.Posix', 'Mono.WebBrowser',
+  'System.Configuration', 'System.Drawing', 'System.EnterpriseServices',
+  'System.Runtime.CompilerServices.Unsafe', 'System.Runtime.InteropServices',
+  'System.Security', 'System.Windows.Forms',
+  'Unity.ZombieObjectDetector.Runtime', 'UnityEtx',
+  # Xbox One
+  'ConsoleUtilsImport', 'DataPlatformImport', 'FriendsImport', 'GameDVRImport', 'GamepadImport',
+  'MarketplaceImport', 'MultiplayerImport', 'SmartGlassImport', 'StorageImport',
+  'StreamingInstallImport', 'TextSystemsImport', 'UnityPluginLogImport', 'UsersImport', 'XIMImport',
+  # PS4
+  'SonyNP', 'SonyPS4CommonDialog', 'SonyPS4SavedGames'
+)
+$plugins = Join-Path $project 'Assets\Plugins'
+$removed = Join-Path $Root "export\$Name\removed-plugins"
+New-Item -ItemType Directory -Force $removed | Out-Null
+$moved = 0
+foreach ($asm in $prune) {
+  foreach ($file in "$asm.dll", "$asm.dll.meta") {
+    $src = Join-Path $plugins $file
+    if (Test-Path $src) { Move-Item $src (Join-Path $removed $file) -Force; $moved++ }
+  }
+}
+Write-Host "[prune] moved $moved files to $removed ($($prune.Count) assemblies)"
+
 Write-Host '[build] runtime'
 dotnet build (Join-Path $Root 'runtime') -c Release -nologo -v q "-p:GameManagedDir=$GameManagedDir"
 if ($LASTEXITCODE -ne 0) { throw 'runtime build failed' }
