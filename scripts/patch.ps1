@@ -63,6 +63,23 @@ foreach ($asm in $prune) {
 }
 Write-Host "[prune] moved $moved files to $removed ($($prune.Count) assemblies)"
 
+# Original assemblies: AssetRipper re-writes the game DLLs it exports, and the result is
+# not faithful: Rewired_Core then fails at runtime with a TypeLoadException in
+# Rewired.Player's constructor, which disables all input. Use the game's own DLLs instead
+# (the .meta files, and so the GUIDs scenes reference, stay the exported ones).
+$backupDir = Join-Path $Root "export\$Name\original-dlls"
+$restored = 0
+foreach ($dir in @($plugins, $backupDir)) {
+  foreach ($dll in Get-ChildItem $dir -Filter *.dll -ErrorAction SilentlyContinue) {
+    $original = Join-Path $GameManagedDir $dll.Name
+    if ((Test-Path $original) -and ((Get-FileHash $original).Hash -ne (Get-FileHash $dll.FullName).Hash)) {
+      Copy-Item $original $dll.FullName -Force
+      $restored++
+    }
+  }
+}
+Write-Host "[originals] replaced $restored AssetRipper-rewritten DLL(s) with the game's originals"
+
 # WAV headers: AssetRipper writes about half of the clips with the RIFF and data chunk
 # sizes left at 0 (a streaming-style header). The samples are fine, but Unity's FSBTool
 # refuses them ("Failed decoding audio clip"), leaving voices and effects silent.

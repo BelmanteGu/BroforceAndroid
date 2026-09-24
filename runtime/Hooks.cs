@@ -78,6 +78,127 @@ namespace BroforceAndroid
             Debug.Log("[BroforceAndroid] persistentDataPath: " + Application.persistentDataPath);
             string[] pads = Input.GetJoystickNames();
             Debug.Log("[BroforceAndroid] joysticks (" + pads.Length + "): " + string.Join(" | ", pads));
+            LogRewiredState();
+        }
+
+        /// <summary>
+        /// Called first thing in Rewired's InputManager_Base.HandleException. The game ships
+        /// with Rewired's own logger turned off, so without this an initialization failure
+        /// (which disables all input) leaves no trace in the log.
+        /// </summary>
+        public static void LogRewiredException(string where, System.Exception exception)
+        {
+            Debug.LogError("[BroforceAndroid] Rewired exception during " + where + ": " + exception);
+        }
+
+        static float nextTick;
+        static string lastScene;
+
+        /// <summary>Every camera in the scene, enabled or not, with where it draws.</summary>
+        static void DumpCameras(string scene)
+        {
+            Debug.Log("[BroforceAndroid] scene " + scene + " screen=" + Screen.width + "x" + Screen.height
+                + " dpi=" + Screen.dpi + " safeArea=" + Screen.safeArea);
+            foreach (Object o in Resources.FindObjectsOfTypeAll(typeof(Camera)))
+            {
+                Camera c = (Camera)o;
+                if (!c.gameObject.scene.IsValid()) continue;   // prefabs/assets, not in a scene
+                Debug.Log("[BroforceAndroid]   cam '" + c.name + "' enabled=" + c.enabled + " active=" + c.gameObject.activeInHierarchy
+                    + " depth=" + c.depth + " rect=" + c.rect + " pixelRect=" + c.pixelRect
+                    + " ortho=" + c.orthographic + "/" + c.orthographicSize + " pos=" + c.transform.position
+                    + " RT=" + (c.targetTexture != null ? c.targetTexture.width + "x" + c.targetTexture.height : "none")
+                    + " parent=" + (c.transform.parent != null ? c.transform.parent.name : "-"));
+            }
+        }
+
+        /// <summary>
+        /// Called every frame from Utility.Platforms.Platform.Update. Every 5 s logs the
+        /// active scene, the Fader state and the enabled cameras, which is what you need
+        /// to tell a black screen from a stuck scene in a logcat.
+        /// </summary>
+        public static void Tick()
+        {
+            string scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            if (scene != lastScene && Time.timeSinceLevelLoad > 4f)
+            {
+                lastScene = scene;
+                try { DumpCameras(scene); } catch (System.Exception e) { Debug.Log("[BroforceAndroid] camera dump failed: " + e.Message); }
+            }
+            if (Time.realtimeSinceStartup < nextTick) return;
+            nextTick = Time.realtimeSinceStartup + 5f;
+            try
+            {
+                string fader = "n/a";
+                System.Type faderType = System.Type.GetType("Fader, Broforce.Game");
+                if (faderType != null)
+                {
+                    const System.Reflection.BindingFlags all = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static
+                        | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+                    System.Reflection.FieldInfo inst = faderType.GetField("instance", all);
+                    object f = inst == null ? null : inst.GetValue(null);
+                    Component fc = f as Component;
+                    if (fc != null)
+                    {
+                        fader = "active=" + fc.gameObject.activeInHierarchy;
+                        foreach (string n in new[] { "fadeToBlack", "fadeFromBlack", "fading", "counter", "fadeSpeed" })
+                        {
+                            System.Reflection.FieldInfo fi = faderType.GetField(n, all);
+                            if (fi != null) fader += " " + n + "=" + fi.GetValue(fi.IsStatic ? null : f);
+                        }
+                    }
+                    else fader = "no instance";
+                }
+                string cams = "";
+                foreach (Camera c in Camera.allCameras)
+                    cams += c.name + "(d" + c.depth + (c.targetTexture != null ? ",RT" : "") + ") ";
+                Debug.Log("[BroforceAndroid] tick scene=" + UnityEngine.SceneManagement.SceneManager.GetActiveScene().name
+                    + " t=" + Time.time.ToString("F0") + " timeScale=" + Time.timeScale + " fader[" + fader + "] cams: " + cams);
+            }
+            catch (System.Exception e)
+            {
+                Debug.Log("[BroforceAndroid] tick failed: " + e.Message);
+            }
+        }
+
+        /// <summary>Rewired state, read by reflection (this assembly doesn't reference Rewired).</summary>
+        static void LogRewiredState()
+        {
+            try
+            {
+                System.Type reInput = System.Type.GetType("Rewired.ReInput, Rewired_Core");
+                if (reInput == null) { Debug.Log("[BroforceAndroid] rewired: ReInput type not found"); return; }
+                object ready = reInput.GetProperty("isReady").GetValue(null, null);
+                object players = reInput.GetProperty("players").GetValue(null, null);
+                object count = players == null ? null : players.GetType().GetProperty("playerCount").GetValue(players, null);
+                Debug.Log("[BroforceAndroid] rewired: isReady=" + ready + " players=" + (players == null ? "null" : count.ToString()));
+
+                System.Type managerBase = System.Type.GetType("Rewired.InputManager_Base, Rewired_Core");
+                if (managerBase != null)
+                {
+                    Object[] managers = Object.FindObjectsOfType(managerBase);
+                    Debug.Log("[BroforceAndroid] rewired: InputManager instances=" + managers.Length);
+                    foreach (Object m in managers)
+                    {
+                        Behaviour b = m as Behaviour;
+                        Debug.Log("[BroforceAndroid] rewired:   " + m.GetType().FullName + " on '" + m.name
+                            + "' enabled=" + (b != null && b.enabled) + " activeInHierarchy=" + (b != null && b.gameObject.activeInHierarchy));
+                        const System.Reflection.BindingFlags any = System.Reflection.BindingFlags.Instance
+                            | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+                        foreach (string field in new[] { "initialized", "criticalError", "_controllerDataFiles", "_userData", "_dontDestroyOnLoad", "platform", "editorPlatform", "isEditor" })
+                        {
+                            System.Reflection.FieldInfo fi = null;
+                            for (System.Type t = m.GetType(); t != null && fi == null; t = t.BaseType)
+                                fi = t.GetField(field, any);
+                            object v = fi == null ? "<no field>" : fi.GetValue(m);
+                            Debug.Log("[BroforceAndroid] rewired:     " + field + " = " + (v == null ? "null" : v.ToString()));
+                        }
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.Log("[BroforceAndroid] rewired: inspection failed: " + e);
+            }
         }
     }
 }

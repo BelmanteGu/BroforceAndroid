@@ -99,6 +99,28 @@ static class Patches
                 il.InsertBefore(ctx.Method.Body.Instructions[0], il.Create(OpCodes.Call, ctx.Hook("OnStartup")));
             }),
 
+        new("rewired-errors", "Rewired_Core", "Rewired.InputManager_Base", "HandleException",
+            "InputManager_Base.HandleException() also writes the exception to Unity's log",
+            ctx =>
+            {
+                // HandleException(ExceptionPoint location, string message, Exception exception)
+                if (ctx.Method.Parameters.Count != 3)
+                    throw new PatchException($"expected 3 parameters, found {ctx.Method.Parameters.Count}");
+                var il = ctx.Method.Body.GetILProcessor();
+                var first = ctx.Method.Body.Instructions[0];
+                il.InsertBefore(first, il.Create(OpCodes.Ldarg_2));
+                il.InsertBefore(first, il.Create(OpCodes.Ldarg_3));
+                il.InsertBefore(first, il.Create(OpCodes.Call, ctx.Hook("LogRewiredException")));
+            }),
+
+        new("tick-log", "Assembly-CSharp", "Utility.Platforms.Platform", "Update",
+            "Platform.Update() calls a 5-second diagnostic log (scene, fader, cameras)",
+            ctx =>
+            {
+                var il = ctx.Method.Body.GetILProcessor();
+                il.InsertBefore(ctx.Method.Body.Instructions[0], il.Create(OpCodes.Call, ctx.Hook("Tick")));
+            }),
+
         // --- Graphics (#10, #19) ------------------------------------------------
         // Standard Assets image effects (bloom, vignetting, SSAO, DOF, ...) are too heavy
         // for mobile and their shaders are placeholders. Every one of them calls

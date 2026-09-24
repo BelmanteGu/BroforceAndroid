@@ -124,8 +124,11 @@ namespace BroforceAndroid
 
             Debug.Log("[BroforceAndroid] Building " + names.Length + " bundles for " + target + "...");
             // LZ4 (chunk based) so AssetBundle.LoadFromFile works straight from the APK.
+            // Always a full rebuild: Unity's incremental check hashes the assets, not the
+            // scripts' assembly names, so after the patcher renames assemblies it would
+            // keep scenes that point at the old names ("referenced script is missing").
             AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(outDir,
-                BuildAssetBundleOptions.ChunkBasedCompression, target);
+                BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.ForceRebuildAssetBundle, target);
             if (manifest == null) Fail("BuildAssetBundles failed");
 
             // The game loads "<streamingAssets>/<name>.assetbundle".
