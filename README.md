@@ -1,6 +1,6 @@
 # BroforceAndroid
 
-Unofficial port of **Broforce** (PC/Steam) to Android, played with a **gamepad**.
+Unofficial port of **Broforce** (PC/Steam) to Android, played with a **gamepad** or the **on-screen controls**.
 
 > **This repository contains no game files.** No assets, no DLLs, no decompiled code. It holds only documentation, scripts and patches. To use it you need **your own copy of Broforce on Steam**: the pipeline takes the files from your local install and builds an APK for personal use. Do not distribute generated APKs.
 >
@@ -8,7 +8,7 @@ Unofficial port of **Broforce** (PC/Steam) to Android, played with a **gamepad**
 
 ## Scope
 
-- **Gamepad only**: a physical controller, wired (USB-C) or Bluetooth. There are no on-screen controls.
+- **Gamepad or touch**: a physical controller (wired USB-C or Bluetooth), or the built-in on-screen controls, which hide themselves while a gamepad is connected. A quick settings panel (the ⋮ tab on the right edge) switches controls, stick style, opacity, size and screen mode. See [docs/touch-controls.md](docs/touch-controls.md).
 - **Android ARMv7 (Mono)**: the game is Unity 2017.4 with the Mono backend, which only targets 32-bit ARM. Your device must support `armeabi-v7a`.
 - No Steam: achievements, stats and online multiplayer are disabled.
 

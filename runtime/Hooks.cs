@@ -99,8 +99,8 @@ namespace BroforceAndroid
                 Application.targetFrameRate = 60;
                 // Gamepad-only play: nothing touches the screen, so don't let it dim.
                 Screen.sleepTimeout = SleepTimeout.NeverSleep;
-                try { UseDisplayCutout(); }
-                catch (System.Exception e) { Debug.Log("[BroforceAndroid] display cutout: " + e.Message); }
+                try { StartOverlay(); }
+                catch (System.Exception e) { Debug.Log("[BroforceAndroid] overlay: " + e.Message); }
             }
 
             Debug.Log("[BroforceAndroid] " + Application.platform + " | " + SystemInfo.deviceModel
@@ -114,26 +114,15 @@ namespace BroforceAndroid
         }
 
         /// <summary>
-        /// Draw under the camera cutout too (Android 9+). By default Android keeps the
-        /// cutout's short edge black in landscape; Unity 2017 predates the setting.
+        /// Starts the native overlay (android/src): on-screen controls, the quick settings
+        /// panel and the screen mode (edge to edge under the camera cutout by default).
         /// </summary>
-        static void UseDisplayCutout()
+        static void StartOverlay()
         {
-            using (var version = new AndroidJavaClass("android.os.Build$VERSION"))
-                if (version.GetStatic<int>("SDK_INT") < 28) return;
-            AndroidJavaObject activity;
             using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                activity = player.GetStatic<AndroidJavaObject>("currentActivity");
-            activity.Call("runOnUiThread", new AndroidJavaRunnable(() =>
-            {
-                using (var window = activity.Call<AndroidJavaObject>("getWindow"))
-                using (var attrs = window.Call<AndroidJavaObject>("getAttributes"))
-                {
-                    attrs.Set("layoutInDisplayCutoutMode", 1);   // LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                    window.Call("setAttributes", attrs);
-                }
-                Debug.Log("[BroforceAndroid] display cutout: short edges");
-            }));
+            using (var activity = player.GetStatic<AndroidJavaObject>("currentActivity"))
+            using (var overlay = new AndroidJavaClass("io.github.belmantegu.broforceandroid.Overlay"))
+                overlay.CallStatic("attach", activity);
         }
 
         /// <summary>

@@ -39,7 +39,7 @@ Finds Broforce through Steam's library files and runs [AssetRipper](https://gith
 | `alienfx` | The Alienware lighting SDK throws on the main menu |
 | `quickcapture` | Dev video-capture tool that ran every frame |
 | `sprite-mesh` | `SpriteBase.Awake` destroyed shared mesh assets, which Unity forbids in a player |
-| `startup-log` | Device info, 60 FPS target, screen kept on, drawing under the display cutout |
+| `startup-log` | Device info, 60 FPS target, screen kept on, starts the native overlay ([touch-controls.md](touch-controls.md)) |
 | `rewired-errors`, `tick-log` | Diagnostics in the log: Rewired init failures, scene/camera/renderer dumps |
 | `image-effects` | Disables the UnityScript Standard Assets post effects on Android |
 | `save-thumbnail` | Save thumbnails are copied through a RenderTexture (raw bytes fail on ETC2) |
@@ -61,7 +61,7 @@ Copies the editor automation ([`unity/Editor`](../unity/Editor)) into the projec
    | SDK | min 19, target 28 | Android 14+ refuses targets below 23; 28 is what the legacy SDK ships |
    | HW statistics | off | Its Play services lookup crashes Unity 2017's JNIBridge on Android 16 |
 
-   At runtime the game also draws under the display cutout (`Hooks.UseDisplayCutout`).
+   At runtime the native overlay draws under the display cutout by default (Screen setting, see [touch-controls.md](touch-controls.md)).
 2. `BuildApk`: before the bundles it
    - decodes baked lightmaps exported as native PC textures (DXT5/RGBM) to EXR, so Unity re-encodes them for Android;
    - keeps fully transparent textures uncompressed (ETC2 turned them into white rectangles).

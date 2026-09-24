@@ -3,9 +3,10 @@
   Builds the Android APK from the patched export, in Unity batch mode.
 
 .DESCRIPTION
-  1. Copies the editor automation (unity/Editor) into the project
-  2. ConfigureAndroid: player settings, SDK/JDK, switch platform (reimports textures)
-  3. BuildApk: rebuilds the AssetBundles for Android, then the APK into build/
+  1. Copies the editor automation (unity/Editor) and the art into the project
+  2. Compiles the native overlay (android/src) into Assets/Plugins/Android
+  3. ConfigureAndroid: player settings, SDK/JDK, switch platform (reimports textures)
+  4. BuildApk: rebuilds the AssetBundles for Android, then the APK into build/
 
   Each Unity run writes its log to export/<Name>/<step>.log.
   Run ./scripts/export.ps1 and ./scripts/patch.ps1 first.
@@ -53,6 +54,23 @@ foreach ($pair in @(@('icon.png', 'Icon.png'), @('splash.png', 'Splash.png'))) {
   }
 }
 
+# 3. Native overlay (on-screen controls, quick settings): android/src -> Plugins/Android jar
+$androidJar = Get-ChildItem 'C:\Android\sdk-legacy\platforms' -Recurse -Filter android.jar | Select-Object -Last 1
+if (-not $androidJar) { throw 'android.jar not found. Run ./scripts/setup-env.ps1.' }
+$classes = Join-Path $Root 'build\overlay-classes'
+if (Test-Path $classes) { Remove-Item $classes -Recurse -Force }
+New-Item -ItemType Directory -Force $classes | Out-Null
+$sources = Get-ChildItem (Join-Path $Root 'android\src') -Recurse -Filter *.java | ForEach-Object FullName
+# Java 7 bytecode, like the JNIBridge patch: what the SDK's dx handles best.
+& "$($jdk.FullName)\bin\javac.exe" -source 1.7 -target 1.7 -Xlint:-options -nowarn `
+  -bootclasspath $androidJar.FullName -d $classes $sources
+if ($LASTEXITCODE -ne 0) { throw 'javac failed for android/src' }
+$pluginDir = Join-Path $project 'Assets\Plugins\Android'
+New-Item -ItemType Directory -Force $pluginDir | Out-Null
+& "$($jdk.FullName)\bin\jar.exe" cf (Join-Path $pluginDir 'BroforceAndroid.jar') -C $classes .
+if ($LASTEXITCODE -ne 0) { throw 'jar failed for the overlay' }
+Write-Host "[overlay] Assets/Plugins/Android/BroforceAndroid.jar"
+
 function Invoke-Unity($step, $method) {
   $log = Join-Path $Root "export\$Name\$step.log"
   Write-Host "[unity] $method (log: $log)"
@@ -70,7 +88,7 @@ function Invoke-Unity($step, $method) {
   if ($p.ExitCode -ne 0) { throw "$method failed, see $log" }
 }
 
-# 2-3. Configure and build
+# 4-5. Configure and build
 if (-not $SkipConfigure) { Invoke-Unity 'configure-android' 'BroforceAndroid.Build.ConfigureAndroid' }
 Invoke-Unity 'build-apk' 'BroforceAndroid.Build.BuildApk'
 

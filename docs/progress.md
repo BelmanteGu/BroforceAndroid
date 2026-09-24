@@ -89,3 +89,17 @@ Emulator with a simulated cutout, before (content stops about 145 px from the le
 After, edge to edge:
 
 ![After](images/15-fullscreen-cutout.jpg)
+
+## v0.3.0 (in progress): play with or without a gamepad
+
+### 10. On-screen controls and quick settings (#27, #28)
+
+![On-screen controls](images/16-touch-controls.jpg)
+
+A native Android overlay on top of the game: floating stick or D-pad, FIRE, JUMP, SPECIAL, MELEE, DASH, FLEX and pause. Each control injects the key of the game's default keyboard layout, so the game itself is unchanged. Menus work too: the stick moves the selection, FIRE confirms, pause goes back.
+
+The ⋮ tab on the right edge opens quick settings: controls Auto/On/Off (Auto hides them while a gamepad is connected), stick style, opacity, size, screen mode (full, avoid cutout, 16:9) and vibration.
+
+![Quick settings](images/17-quick-settings.jpg)
+
+Details: [touch-controls.md](touch-controls.md).
