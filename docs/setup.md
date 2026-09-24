@@ -44,6 +44,8 @@ To inspect the result, decompile the patched DLL with [ILSpy](https://github.com
 | Build-tools | **28.0.3** | same | Compatible with the Gradle plugin bundled with 2017.4 |
 | Platform | **android-28** | same | |
 
+The script also patches the Android player's `classes.jar` (`scripts/patch-unity-player.ps1`): Unity 2017.4's `JNIBridge` can't handle default methods that newer Android versions add to framework interfaces, and on Android 16 the player crashes a few seconds after launch with `NoSuchMethodError: ServiceConnection.onServiceConnected(..., IBinderSession)`. The replacement ([`unity/Android`](../unity/Android)) keeps the original signatures and forwards those calls to the older overload.
+
 The Unity installers are NSIS archives, so the script extracts them with 7-Zip instead of running them. No admin rights and no Unity Hub needed for the editor itself. The legacy SDK is installed in its own folder so it doesn't interfere with a newer SDK you may already have.
 
 NDK is not needed: the Mono backend doesn't compile native code.

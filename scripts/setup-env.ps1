@@ -110,6 +110,9 @@ Write-Host '[install] SDK packages (you may be asked to accept licenses)'
 'y','y','y','y','y','y','y' | & "$SdkDir\tools\bin\sdkmanager.bat" --licenses --sdk_root=$SdkDir | Out-Null
 & "$SdkDir\tools\bin\sdkmanager.bat" --sdk_root=$SdkDir 'platform-tools' 'build-tools;28.0.3' 'platforms;android-28' | Out-Null
 
+# Android 16 compatibility fix for the Unity 2017.4 player (JNIBridge default methods).
+& (Join-Path $PSScriptRoot 'patch-unity-player.ps1') -UnityDir $UnityDir
+
 Write-Host ''
 Write-Host 'Done.'
 Write-Host "  Unity:   $UnityDir\Editor\Unity.exe"

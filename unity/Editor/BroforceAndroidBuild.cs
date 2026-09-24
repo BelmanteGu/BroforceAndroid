@@ -85,6 +85,15 @@ namespace BroforceAndroid
             // Gamepad only: don't require a touchscreen, so the game isn't hidden on TV boxes.
             PlayerSettings.Android.androidTVCompatibility = true;
 
+            // "HW Statistics" makes the player look up the Google advertising ID by binding
+            // to Play services through Unity 2017's JNIBridge, which crashes on Android 16
+            // (NoSuchMethodError: ServiceConnection.onServiceConnected(..., IBinderSession)).
+            // The property is internal in 2017.4 (the UI only exposes it to paid licenses).
+            var submitAnalytics = typeof(PlayerSettings).GetProperty("submitAnalytics",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            if (submitAnalytics != null) submitAnalytics.SetValue(null, false, null);
+            Debug.Log("[BroforceAndroid] HW statistics: " + (submitAnalytics != null ? submitAnalytics.GetValue(null, null) : "n/a"));
+
             EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ETC2;
             EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Internal;
 
