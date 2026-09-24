@@ -129,6 +129,10 @@ namespace BroforceAndroid
         {
             Debug.Log("[BroforceAndroid] scene " + scene + " screen=" + Screen.width + "x" + Screen.height
                 + " dpi=" + Screen.dpi + " safeArea=" + Screen.safeArea);
+            Debug.Log("[BroforceAndroid]   fog=" + RenderSettings.fog + " " + RenderSettings.fogMode + " color=" + RenderSettings.fogColor
+                + " density=" + RenderSettings.fogDensity + " range=" + RenderSettings.fogStartDistance + ".." + RenderSettings.fogEndDistance
+                + " ambient=" + RenderSettings.ambientMode + "/" + RenderSettings.ambientLight
+                + " lightmaps=" + LightmapSettings.lightmaps.Length + " lightDir=" + Shader.GetGlobalVector("lightDir"));
             foreach (Object o in Resources.FindObjectsOfTypeAll(typeof(Camera)))
             {
                 Camera c = (Camera)o;
@@ -151,10 +155,17 @@ namespace BroforceAndroid
                 if (r.enabled && r.gameObject.activeInHierarchy && r.isVisible) list.Add(r);
             list.Sort((a, b) => (b.bounds.size.x * b.bounds.size.y).CompareTo(a.bounds.size.x * a.bounds.size.y));
             Debug.Log("[BroforceAndroid]   visible renderers: " + list.Count);
-            for (int i = 0; i < list.Count && i < 25; i++)
+            // The biggest renderer of each material: one atlas can cover dozens of layers.
+            var seen = new System.Collections.Generic.Dictionary<Material, int>();
+            int logged = 0;
+            for (int i = 0; i < list.Count && logged < 60; i++)
             {
                 Renderer r = list[i];
                 Material m = r.sharedMaterial;
+                int count = 0;
+                if (m != null) { seen.TryGetValue(m, out count); seen[m] = count + 1; }
+                if (count >= 3) continue;
+                logged++;
                 Texture mt = m != null && m.HasProperty("_MainTex") ? m.mainTexture : null;
                 Texture2D mt2 = mt as Texture2D;
                 Debug.Log("[BroforceAndroid]   rend '" + r.name + "' " + r.GetType().Name

@@ -34,7 +34,7 @@ adb shell getprop ro.product.cpu.abilist
 
 **Arcade mode and the campaign are playable** on a Galaxy S23 (Android 16): smooth, with music, effects and voices. Tested with a keyboard so far; gamepad testing is next.
 
-Known issues: background clouds render as flat rectangles, and the 3D world map globe is black. See the [v0.2.0 milestone](../../milestones).
+Since v0.1.0, on `main`: the background clouds and the 3D world map globe render correctly. Next: gamepad testing on device. See the [v0.2.0 milestone](../../milestones).
 
 How it got here, step by step and with screenshots: [docs/progress.md](docs/progress.md).
 

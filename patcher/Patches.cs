@@ -161,6 +161,12 @@ static class Patches
         new("amplify-color", "Assembly-CSharp", "AmplifyColorBase", "OnRenderImage",
             "AmplifyColorBase.OnRenderImage() passes the image through on Android (no color grading)",
             ctx => GuardImageEffect(ctx)),
+
+        // An opaque image effect on the world map camera: on GLES it blacks out every
+        // opaque object (globe, water, props), leaving only the transparent borders.
+        new("ssao", "Assembly-CSharp", "UnityStandardAssets.ImageEffects.ScreenSpaceAmbientObscurance", "OnRenderImage",
+            "ScreenSpaceAmbientObscurance.OnRenderImage() passes the image through on Android (no SSAO)",
+            ctx => GuardImageEffect(ctx)),
     };
 
     /// <summary>if (Hooks.SkipImageEffect(source, destination)) return; at the start of OnRenderImage.</summary>

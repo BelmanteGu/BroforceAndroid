@@ -56,3 +56,24 @@ Arcade mode and the campaign are playable on the Galaxy S23: smooth, with music,
 - **The 3D world map globe is black** (emulator and S23); the campaign still works.
 
 ![World map](images/10-world-map-black.jpg)
+
+## v0.2.0 (in progress): visual fixes
+
+### 7. Clouds (#25)
+
+![Jungle, clouds fixed](images/11-jungle-clouds-fixed.jpg)
+
+The rectangles were the `ParaCloud1-3` sprites. Their textures are fully transparent in the game, so on PC they draw nothing. On Android, ETC2 compression turned them into opaque white quads. The build now keeps fully transparent textures uncompressed (11 of them, all tiny).
+
+### 8. World map globe (#26)
+
+Two problems stacked:
+
+1. The world map camera runs Screen Space Ambient Obscurance, an opaque image effect. On GLES it blacked out every opaque object, which left only the transparent borders and the glow. It's bypassed on Android, like Amplify Color.
+2. With SSAO gone the globe was overexposed:
+
+   ![World map, raw lightmap](images/12-world-map-no-lightmap.jpg)
+
+   The baked lightmap came out of AssetRipper as a native PC texture (DXT5 holding RGBM), and Android decoded it with the mobile formula. The build now decodes it to an HDR EXR under the same GUID and imports it as a Lightmap, so Unity re-encodes it for Android:
+
+   ![World map](images/13-world-map.jpg)

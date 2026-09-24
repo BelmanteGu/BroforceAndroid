@@ -111,6 +111,8 @@ namespace BroforceAndroid
         [MenuItem("BroforceAndroid/Build Bundles")]
         public static void BuildBundles()
         {
+            ConvertLightmaps();
+            FixBlankTextures();
             AssignSceneBundles();
 
             string[] names = AssetDatabase.GetAllAssetBundleNames();
@@ -142,6 +144,109 @@ namespace BroforceAndroid
             }
             AssetDatabase.Refresh();
             Debug.Log("[BroforceAndroid] Bundles written to " + StreamingAssets);
+        }
+
+        // AssetRipper exports baked lightmaps as native Texture2D assets that keep the PC
+        // format (DXT5 holding RGBM). Android can't use that, and the lit scenes (the
+        // WorldMap3D globe) render black. Decode each one to an HDR EXR under the same GUID,
+        // imported as a Lightmap, so Unity re-encodes it for the target platform.
+        const float RgbmRange = 5f;   // Unity's RGBM range in gamma colour space
+
+        static void ConvertLightmaps()
+        {
+            string assets = Path.Combine(ProjectDir, "Assets");
+            var found = Directory.GetFiles(assets, "Lightmap-*.texture2D", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(assets, "Lightmap-*.asset", SearchOption.AllDirectories));
+            foreach (string exported in found)
+            {
+                // Unity 2017 doesn't import the ".texture2D" extension; ".asset" it does.
+                string file = Path.ChangeExtension(exported, ".asset");
+                if (file != exported)
+                {
+                    File.Move(exported, file);
+                    File.Move(exported + ".meta", file + ".meta");
+                    AssetDatabase.Refresh();
+                }
+                string path = "Assets" + file.Substring(assets.Length).Replace('\\', '/');
+                string guid = AssetDatabase.AssetPathToGUID(path);
+                var src = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (src == null || string.IsNullOrEmpty(guid)) { Debug.Log("[BroforceAndroid] Lightmap not loadable: " + path); continue; }
+
+                // Blit decompresses on the editor's GPU; linear read keeps the raw RGBM bytes.
+                var rt = RenderTexture.GetTemporary(src.width, src.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+                Graphics.Blit(src, rt);
+                var raw = new Texture2D(src.width, src.height, TextureFormat.RGBA32, false, true);
+                RenderTexture prev = RenderTexture.active;
+                RenderTexture.active = rt;
+                raw.ReadPixels(new Rect(0, 0, src.width, src.height), 0, 0);
+                RenderTexture.active = prev;
+                RenderTexture.ReleaseTemporary(rt);
+
+                Color[] px = raw.GetPixels();
+                for (int i = 0; i < px.Length; i++)
+                {
+                    float m = px[i].a * RgbmRange;
+                    px[i] = new Color(px[i].r * m, px[i].g * m, px[i].b * m, 1f);
+                }
+                var hdr = new Texture2D(src.width, src.height, TextureFormat.RGBAHalf, false, true);
+                hdr.SetPixels(px);
+                byte[] exr = hdr.EncodeToEXR(Texture2D.EXRFlags.CompressZIP);
+                UnityEngine.Object.DestroyImmediate(raw);
+                UnityEngine.Object.DestroyImmediate(hdr);
+
+                // Same GUID, new importer: references (type 2 native -> type 3 imported) still resolve.
+                string full = Path.Combine(ProjectDir, path);
+                string exrPath = Path.ChangeExtension(path, ".exr");
+                File.WriteAllBytes(Path.Combine(ProjectDir, exrPath), exr);
+                File.WriteAllText(Path.Combine(ProjectDir, exrPath) + ".meta",
+                    "fileFormatVersion: 2\nguid: " + guid + "\nTextureImporter:\n  textureType: 6\n");
+                File.Delete(full);
+                File.Delete(full + ".meta");
+                foreach (string lighting in Directory.GetFiles(Path.GetDirectoryName(full), "LightingData*.asset"))
+                {
+                    string text = File.ReadAllText(lighting);
+                    string fixedText = text.Replace("guid: " + guid + ", type: 2", "guid: " + guid + ", type: 3");
+                    if (fixedText != text) File.WriteAllText(lighting, fixedText);
+                }
+                AssetDatabase.Refresh();
+
+                var importer = (TextureImporter)AssetImporter.GetAtPath(exrPath);
+                importer.textureType = TextureImporterType.Lightmap;
+                importer.mipmapEnabled = true;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.SaveAndReimport();
+                Debug.Log("[BroforceAndroid] Lightmap " + path + " -> " + exrPath);
+            }
+        }
+
+        // Some textures are fully transparent in the game (the jungle's ParaCloud1-3):
+        // invisible on PC, but ETC2-compressed on Android they draw as white rectangles.
+        // Keep those uncompressed. Blank PNGs are tiny, so only small files are checked.
+        static void FixBlankTextures()
+        {
+            string assets = Path.Combine(ProjectDir, "Assets");
+            int count = 0;
+            foreach (string file in Directory.GetFiles(assets, "*.png", SearchOption.AllDirectories))
+            {
+                if (new FileInfo(file).Length > 4096) continue;
+                var probe = new Texture2D(2, 2);
+                bool blank = probe.LoadImage(File.ReadAllBytes(file)) && probe.GetPixels32().All(p => p.a == 0);
+                UnityEngine.Object.DestroyImmediate(probe);
+                if (!blank) continue;
+
+                string path = "Assets" + file.Substring(assets.Length).Replace('\\', '/');
+                var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                if (importer == null) continue;
+                TextureImporterPlatformSettings android = importer.GetPlatformTextureSettings("Android");
+                if (android.overridden && android.format == TextureImporterFormat.RGBA32) continue;
+                android.overridden = true;
+                android.format = TextureImporterFormat.RGBA32;
+                importer.SetPlatformTextureSettings(android);
+                importer.SaveAndReimport();
+                count++;
+                Debug.Log("[BroforceAndroid] Blank texture kept uncompressed: " + path);
+            }
+            Debug.Log("[BroforceAndroid] Blank textures fixed: " + count);
         }
 
         static void AssignSceneBundles()
