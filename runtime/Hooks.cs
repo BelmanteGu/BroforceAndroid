@@ -57,6 +57,18 @@ namespace BroforceAndroid
         }
 
         /// <summary>
+        /// Guards the game's own OnRenderImage effects that we don't port (Amplify Color
+        /// grading: its hidden shaders are still placeholders and it blacks out the screen).
+        /// Returns true when it already copied source to destination and the effect must skip.
+        /// </summary>
+        public static bool SkipImageEffect(RenderTexture source, RenderTexture destination)
+        {
+            if (ImageEffectsAllowed()) return false;
+            Graphics.Blit(source, destination);
+            return true;
+        }
+
+        /// <summary>
         /// Called at the start of Startup.Start (the first scene). Logs what we need when
         /// reading `adb logcat -s Unity` from a bug report.
         /// </summary>
@@ -108,6 +120,27 @@ namespace BroforceAndroid
                     + " ortho=" + c.orthographic + "/" + c.orthographicSize + " pos=" + c.transform.position
                     + " RT=" + (c.targetTexture != null ? c.targetTexture.width + "x" + c.targetTexture.height : "none")
                     + " parent=" + (c.transform.parent != null ? c.transform.parent.name : "-"));
+                string comps = "";
+                foreach (Behaviour b in c.GetComponents<Behaviour>())
+                    if (b != null && !(b is Camera)) comps += b.GetType().Name + (b.enabled ? "" : "(off)") + " ";
+                Debug.Log("[BroforceAndroid]     components: " + comps);
+            }
+
+            // The biggest visible renderers: a black screen is either nothing drawing or
+            // something big drawing on top.
+            var list = new System.Collections.Generic.List<Renderer>();
+            foreach (Renderer r in Object.FindObjectsOfType<Renderer>())
+                if (r.enabled && r.gameObject.activeInHierarchy && r.isVisible) list.Add(r);
+            list.Sort((a, b) => (b.bounds.size.x * b.bounds.size.y).CompareTo(a.bounds.size.x * a.bounds.size.y));
+            Debug.Log("[BroforceAndroid]   visible renderers: " + list.Count);
+            for (int i = 0; i < list.Count && i < 25; i++)
+            {
+                Renderer r = list[i];
+                Material m = r.sharedMaterial;
+                Debug.Log("[BroforceAndroid]   rend '" + r.name + "' " + r.GetType().Name
+                    + " shader=" + (m != null && m.shader != null ? m.shader.name + (m.shader.isSupported ? "" : " (UNSUPPORTED)") : "none")
+                    + " queue=" + (m != null ? m.renderQueue : -1) + " center=" + r.bounds.center + " size=" + r.bounds.size
+                    + " layer=" + LayerMask.LayerToName(r.gameObject.layer) + " sort=" + r.sortingOrder);
             }
         }
 

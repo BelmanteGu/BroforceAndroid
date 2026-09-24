@@ -141,7 +141,26 @@ static class Patches
                 il.InsertBefore(original, il.Create(OpCodes.Ldc_I4_0));
                 il.InsertBefore(original, il.Create(OpCodes.Ret));
             }) { ParamCount = 1 },
+
+        new("amplify-color", "Assembly-CSharp", "AmplifyColorBase", "OnRenderImage",
+            "AmplifyColorBase.OnRenderImage() passes the image through on Android (no color grading)",
+            ctx => GuardImageEffect(ctx)),
     };
+
+    /// <summary>if (Hooks.SkipImageEffect(source, destination)) return; at the start of OnRenderImage.</summary>
+    static void GuardImageEffect(PatchContext ctx)
+    {
+        if (ctx.Method.Parameters.Count != 2)
+            throw new PatchException($"expected OnRenderImage(source, destination), found {ctx.Method.Parameters.Count} parameters");
+        var il = ctx.Method.Body.GetILProcessor();
+        var first = ctx.Method.Body.Instructions[0];
+        var ret = il.Create(OpCodes.Ret);
+        il.InsertBefore(first, il.Create(OpCodes.Ldarg_1));
+        il.InsertBefore(first, il.Create(OpCodes.Ldarg_2));
+        il.InsertBefore(first, il.Create(OpCodes.Call, ctx.Hook("SkipImageEffect")));
+        il.InsertBefore(first, il.Create(OpCodes.Brfalse, first));
+        il.InsertBefore(first, ret);
+    }
 
     static void ReturnConstant(MethodDefinition method, bool value)
     {
