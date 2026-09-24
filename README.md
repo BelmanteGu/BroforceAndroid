@@ -1,61 +1,59 @@
 # BroforceAndroid
 
-Port não oficial do **Broforce** (PC/Steam) para Android, jogado com **gamepad**.
+Unofficial port of **Broforce** (PC/Steam) to Android, played with a **gamepad**.
 
-> **Este repositório não contém nenhum arquivo do jogo.** Nada de assets, DLLs ou código decompilado. Ele guarda só documentação, scripts e patches. Para usar, você precisa ter **a sua própria cópia do Broforce na Steam**: o pipeline pega os arquivos da sua instalação local e gera um APK para uso pessoal. Não distribua APKs gerados.
+> **This repository contains no game files.** No assets, no DLLs, no decompiled code. It holds only documentation, scripts and patches. To use it you need **your own copy of Broforce on Steam**: the pipeline takes the files from your local install and builds an APK for personal use. Do not distribute generated APKs.
 >
-> Broforce é propriedade da Free Lives e da Devolver Digital. Este projeto não tem nenhuma ligação com elas.
+> Broforce is the property of Free Lives and Devolver Digital. This project is not affiliated with or endorsed by them.
 
-*English: unofficial, gamepad-only Android port of Broforce. No game files are included; you need your own Steam copy. Personal use only.*
+## Scope
 
-## Escopo
+- **Gamepad only**: a physical controller, wired (USB-C) or Bluetooth. There are no on-screen controls.
+- **Android ARMv7 (Mono)**: the game is Unity 2017.4 with the Mono backend, which only targets 32-bit ARM. Your device must support `armeabi-v7a`.
+- No Steam: achievements, stats and online multiplayer are disabled.
 
-- **Só gamepad**: controle físico, com cabo (USB-C) ou Bluetooth. Não vai ter controle na tela.
-- **Android ARMv7 (Mono)**: o jogo é Unity 2017.4 com backend Mono, que só gera 32 bits. O celular precisa aceitar `armeabi-v7a`.
-- Sem Steam: conquistas, estatísticas e multiplayer online ficam desativados.
-
-Para saber se o seu celular é compatível:
+To check whether your device is compatible:
 
 ```sh
 adb shell getprop ro.product.cpu.abilist
-# precisa listar armeabi-v7a
+# must include armeabi-v7a
 ```
 
-## Como funciona
+## How it works
 
-1. **Exportar**: o [AssetRipper](https://github.com/AssetRipper/AssetRipper) transforma a sua instalação do Broforce em um projeto Unity.
-2. **Patch**: os scripts deste repo removem o que não existe no Android (Steamworks, SDKs de console, Windows Forms), ajustam os saves, os shaders e a entrada do controle.
-3. **Build**: o Unity 2017.4.7f1 gera o APK.
+1. **Export**: [AssetRipper](https://github.com/AssetRipper/AssetRipper) turns your Broforce install into a Unity project.
+2. **Patch**: scripts in this repo remove what doesn't exist on Android (Steamworks, console SDKs, Windows Forms) and fix saves, shaders and gamepad input.
+3. **Build**: Unity 2017.4.7f1 produces the APK.
 
 ## Status
 
-Em andamento. O roteiro está nas [issues](../../issues) e nos [milestones](../../milestones), divididos em fases:
+Work in progress. The roadmap lives in the [issues](../../issues) and [milestones](../../milestones), split into phases:
 
-| Fase | Objetivo | Portão |
+| Phase | Goal | Gate |
 |---|---|---|
-| 0 | Reconhecimento | Versão do Unity, plugins e ABI do celular conhecidos ✅ |
-| 1 | Exportar com AssetRipper | Projeto abre no Editor sem erros de compilação |
-| 2 | Rodar no Editor | Uma missão inteira jogável no PC |
-| 3 | Primeiro build Android | O jogo abre no celular e chega ao menu |
-| 4 | Gamepad | Uma missão inteira no celular com controle |
-| 5 | Desempenho e polimento | Todos os mundos jogáveis com FPS estável |
+| 0 | Reconnaissance | Unity version, plugins and device ABI known ✅ |
+| 1 | Export with AssetRipper | Project opens in the Editor with no compile errors |
+| 2 | Run in the Editor | A full mission is playable on PC |
+| 3 | First Android build | The game boots on the phone and reaches the main menu |
+| 4 | Gamepad | A full mission on the phone with a controller |
+| 5 | Performance and polish | Every world playable at a stable frame rate |
 
-Os detalhes técnicos estão em [docs/](docs/).
+Technical notes are in [docs/](docs/).
 
-## Requisitos (desenvolvimento)
+## Requirements (development)
 
-- Broforce instalado pela Steam (Windows)
-- Unity 2017.4.7f1 com o módulo Android Build Support
-- JDK 8 (o Unity 2017.4 não funciona com JDK 11+)
+- Broforce installed via Steam (Windows)
+- Unity 2017.4.7f1 with Android Build Support
+- JDK 8 (Unity 2017.4 does not work with JDK 11+)
 - Android SDK + `adb`
 - AssetRipper 2.x
 
-## Contribuindo
+## Contributing
 
-Issues e PRs são bem-vindos. Regra de ouro: **nunca faça commit de arquivos do jogo** nem de código decompilado dele. Mudanças no código do jogo entram como patch ou script aplicado sobre a exportação local.
+Issues and PRs are welcome. Golden rule: **never commit game files** or code decompiled from the game. Changes to the game's code go in as patches or scripts applied on top of your local export.
 
-Parte do planejamento e do código foi feita com ajuda de ferramentas de IA.
+Part of the planning and code was done with the help of AI tools.
 
-## Licença
+## License
 
-[MIT](LICENSE), válida só para o conteúdo original deste repositório.
+[MIT](LICENSE), covering only the original content of this repository.

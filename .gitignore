@@ -1,13 +1,13 @@
-# Ferramentas baixadas localmente (AssetRipper, etc.)
+# Locally downloaded tools (AssetRipper, etc.)
 tools/
 
-# Saída do AssetRipper e projeto Unity gerado a partir da cópia do jogo.
-# NUNCA versionar: contém assets e código do jogo original.
+# AssetRipper output and the Unity project generated from your game copy.
+# NEVER commit: contains original game assets and code.
 export/
 work/
 project/
 
-# Arquivos do jogo, caso alguém copie para cá por engano
+# Game files, in case someone copies them here by mistake
 Broforce_beta_Data/
 *.assets
 *.assets.resS
@@ -28,7 +28,7 @@ Assembly-CSharp*.dll
 *.pidb
 *.userprefs
 
-# SO / editores
+# OS / editors
 .DS_Store
 Thumbs.db
 .vs/
