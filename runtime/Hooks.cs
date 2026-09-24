@@ -45,6 +45,18 @@ namespace BroforceAndroid
         }
 
         /// <summary>
+        /// Replaces Object.DestroyImmediate(obj) in [ExecuteInEditMode] game code (e.g.
+        /// SpriteBase.Awake). The shipped DLL is the player build, so its edit-mode guards
+        /// were compiled out: in the Editor, during a build, it would destroy mesh assets
+        /// and the build fails ("Destroying assets is not permitted"). Same behavior in-game.
+        /// </summary>
+        public static void DestroyImmediateAtRuntime(Object obj)
+        {
+            if (Application.isPlaying)
+                Object.DestroyImmediate(obj);
+        }
+
+        /// <summary>
         /// Called at the start of Startup.Start (the first scene). Logs what we need when
         /// reading `adb logcat -s Unity` from a bug report.
         /// </summary>

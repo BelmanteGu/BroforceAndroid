@@ -75,6 +75,21 @@ static class Patches
             "QuickCapture.LateUpdate() does nothing (NatCorder dev capture tool, runs every frame)",
             ctx => ReplaceBody(ctx.Method, il => il.Emit(OpCodes.Ret))),
 
+        // --- Editor-time safety -------------------------------------------------
+        new("sprite-mesh", "Assembly-CSharp", "SpriteBase", "Awake",
+            "SpriteBase.Awake() only destroys its old mesh while playing (not an asset during builds)",
+            ctx =>
+            {
+                var calls = ctx.Method.Body.Instructions.Where(i =>
+                    (i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt)
+                    && i.Operand is MethodReference m && m.Name == "DestroyImmediate"
+                    && m.DeclaringType.FullName == "UnityEngine.Object" && m.Parameters.Count == 1).ToList();
+                if (calls.Count != 1)
+                    throw new PatchException($"expected 1 Object.DestroyImmediate(Object) call, found {calls.Count}");
+                calls[0].OpCode = OpCodes.Call;
+                calls[0].Operand = ctx.Hook("DestroyImmediateAtRuntime");
+            }),
+
         // --- Diagnostics (#14, #17) ---------------------------------------------
         new("startup-log", "Assembly-CSharp", "Startup", "Start",
             "Startup.Start() first logs device, graphics API, save path and joystick names",
