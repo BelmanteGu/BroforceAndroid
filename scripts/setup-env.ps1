@@ -8,9 +8,10 @@
   - A separate "legacy" Android SDK with SDK Tools 26.1.1, build-tools 28.0.3 and platform 28
     (Unity 2017.4 expects the old tools/ layout; your existing SDK is left untouched)
 
-  Unity still needs a license: install Unity Hub once, sign in and activate a free
-  Personal license. The activation is stored in C:\ProgramData\Unity\Unity_lic.ulf
-  and is picked up by this editor too.
+  Also installs the Visual C++ 2010 runtime if missing (admin prompt).
+
+  Unity still needs a license: open the 2017.4 editor once, sign in and pick
+  Unity Personal. That writes C:\ProgramData\Unity\Unity_lic.ulf.
 
   Requires 7-Zip (https://www.7-zip.org).
 
@@ -60,6 +61,17 @@ if (Test-Path "$UnityDir\Editor\Unity.exe") {
   Expand-With7z (Join-Path $DownloadDir 'UnitySetup64-2017.4.7f1.exe') $UnityDir
 }
 
+# --- Visual C++ 2010 runtime ---
+# Extracting the installer skips its prerequisites. Unity 2017.4 needs msvcr100.dll
+# and exits with 0xC0000135 (DLL not found) without it. 2013/2015+ usually exist already.
+if (-not (Test-Path "$env:WINDIR\System32\msvcr100.dll")) {
+  Write-Host '[install] Visual C++ 2010 x64 runtime (accept the admin prompt)'
+  $vc = Join-Path $DownloadDir 'vcredist2010_x64.exe'
+  Copy-Item -LiteralPath (Join-Path $UnityDir '$PLUGINSDIR\vcredist_x64.exe') -Destination $vc -Force
+  $p = Start-Process -FilePath $vc -ArgumentList '/passive', '/norestart' -Verb RunAs -PassThru -Wait
+  if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { throw "VC++ 2010 install failed ($($p.ExitCode))" }
+}
+
 # --- Android Build Support ---
 $androidPlayer = "$UnityDir\Editor\Data\PlaybackEngines\AndroidPlayer"
 if (Test-Path "$androidPlayer\UnityEditor.Android.Extensions.dll") {
@@ -104,5 +116,5 @@ Write-Host "  Unity:   $UnityDir\Editor\Unity.exe"
 Write-Host "  JDK:     $($jdk.FullName)"
 Write-Host "  SDK:     $SdkDir"
 if (-not (Test-Path 'C:\ProgramData\Unity\Unity_lic.ulf')) {
-  Write-Warning 'No Unity license found. Install Unity Hub, sign in and activate a free Personal license.'
+  Write-Warning "No Unity license found. Open $UnityDir\Editor\Unity.exe once, sign in and pick Unity Personal (see docs/setup.md)."
 }

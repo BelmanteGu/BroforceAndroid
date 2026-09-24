@@ -50,7 +50,7 @@ You need Windows, Broforce installed via Steam and [7-Zip](https://www.7-zip.org
 ./scripts/patch.ps1       # apply the Android patches to the exported game DLLs (needs .NET SDK 8+)
 ```
 
-Unity 2017.4 also needs a free Personal license activated once through Unity Hub. Details in [docs/setup.md](docs/setup.md).
+Unity 2017.4 also needs a free Personal license, activated once from the 2017.4 editor itself (not from the current Unity Hub). Details in [docs/setup.md](docs/setup.md).
 
 ## Contributing
 

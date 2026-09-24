@@ -48,15 +48,20 @@ The Unity installers are NSIS archives, so the script extracts them with 7-Zip i
 
 NDK is not needed: the Mono backend doesn't compile native code.
 
+The Unity installer normally installs the **Visual C++ 2010** runtime as a prerequisite. Because we extract it instead, `setup-env.ps1` installs it separately (you'll get an admin prompt). Without it `Unity.exe` exits immediately with `0xC0000135` (DLL not found).
+
 ## Unity license
 
-Unity 2017.4 still requires an activated license, even in batch mode. The only activation path that still works is through Unity Hub:
+Unity 2017.4 needs an activated license, even in batch mode, and it only reads the **legacy** license file `C:\ProgramData\Unity\Unity_lic.ulf`.
 
-1. Install [Unity Hub](https://unity.com/download)
-2. Sign in with a Unity account
-3. **Preferences → Licenses → Add → Get a free personal license**
+**Activate from the 2017.4 editor itself:**
 
-This writes `C:\ProgramData\Unity\Unity_lic.ulf`, which the 2017.4 editor also picks up. You don't need to install any editor through the Hub.
+1. Run `C:\Unity\2017.4.7f1\Editor\Unity.exe` (no project needed)
+2. Sign in with your Unity account in the license window
+3. Pick **Unity Personal**, answer the short survey and confirm
+4. Close the editor. `C:\ProgramData\Unity\Unity_lic.ulf` should now exist
+
+Don't rely on the current Unity Hub for this. Since 3.x it's distributed as an MSIX package: it only writes the new entitlement license (`UnityEntitlementLicense.xml`), inside its own sandboxed folder, and never creates the `.ulf` that 2017.4 needs.
 
 ## Pointing Unity to the JDK and SDK
 
