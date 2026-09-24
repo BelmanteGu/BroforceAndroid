@@ -185,6 +185,50 @@ namespace BroforceAndroid
             Debug.Log(string.Format("[BroforceAndroid] APK: {0} ({1:N0} MB)", apk, new FileInfo(apk).Length / 1048576.0));
         }
 
+        // ------------------------------------------------------------------ diagnostics
+
+        // Lists, per plugin DLL, how many MonoScripts Unity created (one per
+        // MonoBehaviour/ScriptableObject class it could load), and which classes that
+        // derive from them it could NOT turn into a MonoScript. Those show up as
+        // "missing script" in scenes and break deserialization in the player.
+        [MenuItem("BroforceAndroid/Report Scripts")]
+        public static void ReportScripts()
+        {
+            foreach (string dll in Directory.GetFiles(Path.Combine(Application.dataPath, "Plugins"), "*.dll"))
+            {
+                string assetPath = "Assets/Plugins/" + Path.GetFileName(dll);
+                MonoScript[] scripts = AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<MonoScript>().ToArray();
+                var withClass = new HashSet<string>(scripts.Where(s => s.GetClass() != null).Select(s => s.GetClass().FullName));
+
+                int expected = 0;
+                var missing = new List<string>();
+                System.Reflection.Assembly asm = AppDomain.CurrentDomain.GetAssemblies()
+                    .FirstOrDefault(a => a.GetName().Name == Path.GetFileNameWithoutExtension(dll));
+                if (asm != null)
+                {
+                    Type[] types;
+                    try { types = asm.GetTypes(); }
+                    catch (System.Reflection.ReflectionTypeLoadException e)
+                    {
+                        types = e.Types.Where(t => t != null).ToArray();
+                        foreach (Exception le in e.LoaderExceptions.Take(5))
+                            Debug.Log("[BroforceAndroid][scripts]   loader: " + le.Message);
+                    }
+                    foreach (Type t in types)
+                    {
+                        if (t.IsAbstract || t.IsGenericTypeDefinition) continue;
+                        if (!typeof(MonoBehaviour).IsAssignableFrom(t) && !typeof(ScriptableObject).IsAssignableFrom(t)) continue;
+                        expected++;
+                        if (!withClass.Contains(t.FullName)) missing.Add(t.FullName);
+                    }
+                }
+                Debug.Log(string.Format("[BroforceAndroid][scripts] {0}: {1} MonoScripts, {2} script classes, {3} without MonoScript{4}",
+                    Path.GetFileName(dll), scripts.Length, expected, missing.Count, asm == null ? " (assembly not loaded!)" : ""));
+                foreach (string m in missing.Take(40))
+                    Debug.Log("[BroforceAndroid][scripts]   no MonoScript: " + m);
+            }
+        }
+
         // ------------------------------------------------------------------ helpers
 
         static string Arg(string name, string fallback)
