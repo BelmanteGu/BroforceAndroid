@@ -108,14 +108,18 @@ def programs(text):
     clen = struct.unpack('<I', bytes.fromhex(re.search(r'compressedLengths: ([0-9a-f]+)', text).group(1))[:4])[0]
     dlen = struct.unpack('<I', bytes.fromhex(re.search(r'decompressedLengths: ([0-9a-f]+)', text).group(1))[:4])[0]
     data = lz4_block(blob[:clen], dlen)
-    out, pos = [], 0
-    while True:
-        pos = data.find(b'DXBC', pos)
+    # Header: entry count, then (offset, length) per blob index. m_BlobIndex refers to
+    # these entries, which aren't necessarily in file order.
+    count = struct.unpack_from('<I', data, 0)[0]
+    out = []
+    for k in range(count):
+        off, length = struct.unpack_from('<II', data, 4 + 8 * k)
+        pos = data.find(b'DXBC', off, off + length)
         if pos < 0:
-            break
+            out.append('<no DXBC in blob entry %d>' % k)
+            continue
         size = struct.unpack_from('<I', data, pos + 24)[0]
         out.append(disassemble(data[pos:pos + size]))
-        pos += 4
     return out
 
 def bindings(text):
