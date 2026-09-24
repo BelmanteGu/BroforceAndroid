@@ -43,5 +43,20 @@ namespace BroforceAndroid
         {
             return Application.platform != RuntimePlatform.Android;
         }
+
+        /// <summary>
+        /// Called at the start of Startup.Start (the first scene). Logs what we need when
+        /// reading `adb logcat -s Unity` from a bug report.
+        /// </summary>
+        public static void OnStartup()
+        {
+            Debug.Log("[BroforceAndroid] " + Application.platform + " | " + SystemInfo.deviceModel
+                + " | " + SystemInfo.operatingSystem + " | " + SystemInfo.graphicsDeviceType
+                + " " + SystemInfo.graphicsDeviceVersion + " | " + Screen.width + "x" + Screen.height
+                + " | RAM " + SystemInfo.systemMemorySize + " MB");
+            Debug.Log("[BroforceAndroid] persistentDataPath: " + Application.persistentDataPath);
+            string[] pads = Input.GetJoystickNames();
+            Debug.Log("[BroforceAndroid] joysticks (" + pads.Length + "): " + string.Join(" | ", pads));
+        }
     }
 }

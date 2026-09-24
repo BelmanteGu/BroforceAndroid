@@ -75,6 +75,15 @@ static class Patches
             "QuickCapture.LateUpdate() does nothing (NatCorder dev capture tool, runs every frame)",
             ctx => ReplaceBody(ctx.Method, il => il.Emit(OpCodes.Ret))),
 
+        // --- Diagnostics (#14, #17) ---------------------------------------------
+        new("startup-log", "Assembly-CSharp", "Startup", "Start",
+            "Startup.Start() first logs device, graphics API, save path and joystick names",
+            ctx =>
+            {
+                var il = ctx.Method.Body.GetILProcessor();
+                il.InsertBefore(ctx.Method.Body.Instructions[0], il.Create(OpCodes.Call, ctx.Hook("OnStartup")));
+            }),
+
         // --- Graphics (#10, #19) ------------------------------------------------
         // Standard Assets image effects (bloom, vignetting, SSAO, DOF, ...) are too heavy
         // for mobile and their shaders are placeholders. Every one of them calls
