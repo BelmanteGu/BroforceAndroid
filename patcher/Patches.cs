@@ -142,6 +142,22 @@ static class Patches
                 il.InsertBefore(original, il.Create(OpCodes.Ret));
             }) { ParamCount = 1 },
 
+        new("save-thumbnail", "Assembly-CSharp", "SaveSlotsMenu", "SaveDefaultThumbnail",
+            "SaveSlotsMenu.SaveDefaultThumbnail() copies the thumbnail via a RenderTexture (works with ETC2)",
+            ctx =>
+            {
+                var ins = ctx.Method.Body.Instructions;
+                var get = ins.Where(i => i.Operand is MethodReference m && m.Name == "GetRawTextureData").ToList();
+                var load = ins.Where(i => i.Operand is MethodReference m && m.Name == "LoadRawTextureData").ToList();
+                if (get.Count != 1 || load.Count != 1)
+                    throw new PatchException($"expected one GetRawTextureData and one LoadRawTextureData, found {get.Count}/{load.Count}");
+                // Stack before: target, source.GetRawTextureData()  ->  target, source
+                get[0].OpCode = OpCodes.Nop;
+                get[0].Operand = null;
+                load[0].OpCode = OpCodes.Call;
+                load[0].Operand = ctx.Hook("CopyTexture");
+            }),
+
         new("amplify-color", "Assembly-CSharp", "AmplifyColorBase", "OnRenderImage",
             "AmplifyColorBase.OnRenderImage() passes the image through on Android (no color grading)",
             ctx => GuardImageEffect(ctx)),

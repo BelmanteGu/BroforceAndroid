@@ -69,6 +69,24 @@ namespace BroforceAndroid
         }
 
         /// <summary>
+        /// Replaces target.LoadRawTextureData(source.GetRawTextureData()) in
+        /// SaveSlotsMenu.SaveDefaultThumbnail. That byte copy only works when both textures
+        /// share a format; on Android the source is ETC2-compressed and Unity throws, which
+        /// aborted starting a new campaign. Drawing through a RenderTexture works for any format.
+        /// </summary>
+        public static void CopyTexture(Texture2D target, Texture2D source)
+        {
+            RenderTexture rt = RenderTexture.GetTemporary(target.width, target.height, 0);
+            RenderTexture previous = RenderTexture.active;
+            Graphics.Blit(source, rt);
+            RenderTexture.active = rt;
+            target.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+            target.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(rt);
+        }
+
+        /// <summary>
         /// Called at the start of Startup.Start (the first scene). Logs what we need when
         /// reading `adb logcat -s Unity` from a bug report.
         /// </summary>
