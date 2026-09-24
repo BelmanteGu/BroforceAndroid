@@ -25,16 +25,16 @@ adb shell getprop ro.product.cpu.abilist
 2. **Patch**: scripts in this repo remove what doesn't exist on Android (Steamworks, console SDKs, Windows Forms) and fix saves, shaders and gamepad input.
 3. **Build**: Unity 2017.4.7f1 produces the APK.
 
-## Status: playable (v0.2.0)
+## Status: playable (v0.3.0)
 
 <p>
   <img src="docs/images/04-main-menu.jpg" width="49%" alt="Main menu">
   <img src="docs/images/08-gameplay-jungle-s23.jpg" width="49%" alt="Gameplay on a Galaxy S23">
 </p>
 
-**Arcade mode and the campaign are playable** on a Galaxy S23 (Android 16): smooth, with music, effects and voices. Tested with a keyboard so far; gamepad testing is next.
+**Arcade mode and the campaign are playable** on a Galaxy S23 (Android 16): smooth, with music, effects and voices. Played with the on-screen controls; physical gamepad testing is next.
 
-v0.2.0 fixed the background clouds and the 3D world map globe, and the game fills wide screens edge to edge, including the camera cutout. Next: gamepad testing on device. See the [v0.3.0 milestone](../../milestones).
+v0.3.0 added the on-screen controls and a quick settings panel; v0.2.0 fixed the clouds and the world map globe and made the game fill wide screens edge to edge. Next: physical gamepad testing on device. See the [v0.4.0 milestone](../../milestones).
 
 How it got here, step by step and with screenshots: [docs/progress.md](docs/progress.md).
 
