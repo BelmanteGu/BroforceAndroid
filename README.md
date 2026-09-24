@@ -47,6 +47,7 @@ You need Windows, Broforce installed via Steam and [7-Zip](https://www.7-zip.org
 ```powershell
 ./scripts/setup-env.ps1   # Unity 2017.4.7f1 + Android module, JDK 8, legacy Android SDK
 ./scripts/export.ps1      # your Broforce install -> Unity project in export/ (git-ignored)
+./scripts/patch.ps1       # apply the Android patches to the exported game DLLs (needs .NET SDK 8+)
 ```
 
 Unity 2017.4 also needs a free Personal license activated once through Unity Hub. Details in [docs/setup.md](docs/setup.md).

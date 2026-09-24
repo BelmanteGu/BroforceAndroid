@@ -23,10 +23,11 @@ Assembly-CSharp*.dll
 [Ll]ogs/
 *.apk
 *.aab
-*.csproj
-*.sln
 *.pidb
 *.userprefs
+
+# .NET (patcher/, runtime/)
+[Bb]in/
 
 # OS / editors
 .DS_Store

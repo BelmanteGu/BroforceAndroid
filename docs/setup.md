@@ -10,13 +10,28 @@ Everything here is Windows-only for now, because the game is exported from the W
 
 # 2. Export your Broforce install to a Unity project (export/unity-dll)
 ./scripts/export.ps1
+
+# 3. Patch the exported game DLLs for Android
+./scripts/patch.ps1
 ```
 
 Requirements before running the scripts:
 
 - Broforce installed through Steam
 - [7-Zip](https://www.7-zip.org) at `C:\Program Files\7-Zip\7z.exe`
+- [.NET SDK](https://dotnet.microsoft.com/download) 8 or newer (for the patcher)
 - ~6 GB of free disk space
+
+## Patching
+
+`scripts/patch.ps1` builds two small projects and applies them to `export/unity-dll`:
+
+- `runtime/`: `BroforceAndroid.Runtime.dll`, our own code (net35, like Unity 2017.4's Mono profile) that patched game methods call into. It's copied into `Assets/Plugins`.
+- `patcher/`: a Mono.Cecil tool that rewrites specific methods in `Assembly-CSharp.dll` and `Assembly-CSharp-firstpass.dll`. The list lives in [`patcher/Patches.cs`](../patcher/Patches.cs).
+
+The originals are backed up to `export/unity-dll/original-dlls` on the first run, and every run starts from that backup. If any patch can't find its target, nothing is written. Why IL patching instead of editing decompiled code: [ADR 0001](adr/0001-patching-strategy.md).
+
+To inspect the result, decompile the patched DLL with [ILSpy](https://github.com/icsharpcode/ILSpy) (`dotnet tool install ilspycmd --tool-path tools/ilspy`).
 
 ## What `setup-env.ps1` installs
 
