@@ -63,6 +63,8 @@ Unity 2017.4 needs an activated license, even in batch mode, and it only reads t
 
 Don't rely on the current Unity Hub for this. Since 3.x it's distributed as an MSIX package: it only writes the new entitlement license (`UnityEntitlementLicense.xml`), inside its own sandboxed folder, and never creates the `.ulf` that 2017.4 needs.
 
+**Quit Unity Hub (including its tray icon) while you work.** Its background licensing client (`Unity.Licensing.Client`) returns licenses when the Hub's login token expires, and in doing so it deleted `Unity_lic.ulf` in the middle of a build. Batch mode then fails with `Unity has not been activated with a valid License`. If that happens, activate again from the 2017.4 editor as above.
+
 ## Pointing Unity to the JDK and SDK
 
 In **Edit → Preferences → External Tools**:
